@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'admin@gmail.com';
+    }
+    // Private event data: admin only.
+    match /eventData/main {
+      allow read, write: if isAdmin();
+    }
+    // Public game configuration only. Contains no player PII.
+    // Customers can read enabled game configuration; only admin can publish changes.
+    match /publicGame/settings {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
